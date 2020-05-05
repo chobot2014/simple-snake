@@ -1,0 +1,205 @@
+<html>
+
+<head>
+    <style>
+        #GameContainer {
+            position: fixed;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        #GameRoot {
+            position: absolute;
+            top: 1em;
+            left: 1em;
+            bottom: 1em;
+            right: 1em;
+        }
+
+
+        .baseSquare {
+            height: 20px;
+            width: 20px;
+            border: 1em black;
+            background-color: whitesmoke;
+        }
+
+        .playerSquare {
+            background-color: black;
+        }
+    </style>
+    <script>
+        const BASE_TEMPLATE = `
+                <div id='GameContainer'>
+                    <div id='GameRoot'>
+                    
+                    </div>
+                </div>
+            `;        
+        document.write(BASE_TEMPLATE);
+        const GAME = {
+            configuration: {
+                boardX: 25,
+                boardY: 25
+            },
+            state: {
+                level: 1,
+                prevPositions: [],
+                currentPosition: {
+                    x: 1,
+                    y: 1
+                },
+                nextPosition: {
+                    x: 9,
+                    y: 9
+                },
+                directionPressed: 'ArrowRight'
+            },
+            render: function() {
+                let squares = [];
+                for(let y=0; y <= this.configuration.boardY; y++) {
+                    let row = [];
+                    for(let x =0; x<= this.configuration.boardX; x++) {
+                        row.push(false);
+                    }
+                    squares.push(row);
+                }
+
+                squares[this.state.currentPosition.y][this.state.currentPosition.x] = true;
+                
+                for(let i=1; i<= this.state.level; i++) {
+                    let pY = this.state.prevPositions[this.state.prevPositions.length - i].y;
+                    let pX =this.state.prevPositions[this.state.prevPositions.length - i].x;
+                    squares[pY][pX] = true;
+                }
+
+                squares[this.state.nextPosition.y][this.state.nextPosition.x] = true;
+
+                document.querySelector('#GameRoot').innerHTML = `
+                    <table>
+                        <tbody>
+                            ${squares.reduce((acc, curr) => {
+                                acc += `
+                                    <tr>
+                                        ${curr.reduce((innAcc, innCurr) => {
+                                            innAcc += `
+                                                <td>
+                                                    <div class="baseSquare ${innCurr ? "playerSquare" : ""}">
+                                                       
+                                                    </div>
+                                                </td>
+                                            `;
+                                            return innAcc;
+                                        }, "")}
+                                    </tr>
+                                `;
+                                return acc;
+                            }, "")}
+                        </tbody>
+                    </table>
+                `;
+            },
+            nextFrame: function () {
+                // save previous position
+                this.state.prevPositions.push(JSON.parse(JSON.stringify(this.state.currentPosition)));
+
+                // compute new position
+                switch (this.state.directionPressed) {
+                    case "ArrowRight":
+                        this.state.currentPosition.x++;
+                        break;
+                    case "ArrowUp":
+                        this.state.currentPosition.y--;
+                        break;
+                    case "ArrowDown":
+                        this.state.currentPosition.y++;
+                        break;
+                    case "ArrowLeft":
+                        this.state.currentPosition.x--;
+                        break;
+                }
+
+                // check if new position loses the game
+                // we are saying that the 0th and last item in both the x and y direction
+                // are the bounds to the game box, for now don't care if they 
+                // run over themselves
+                if (
+                    this.state.currentPosition.x >= 0 &&
+                    this.state.currentPosition.x <= this.configuration.boardX &&
+                    this.state.currentPosition.y >= 0 &&
+                    this.state.currentPosition.y <= this.configuration.boardY
+                ) {
+                    // keep on trucking
+                    if (this.state.currentPosition.x == this.state.nextPosition.x &&
+                        this.state.currentPosition.y == this.state.nextPosition.y) {
+                            this.state.level++;
+                            this.state.nextPosition.x = Math.ceil(Math.random() * 10);
+                            this.state.nextPosition.y = Math.ceil(Math.random() * 10);
+                    } else {
+                        // check if hitting itself
+                        let snakeBody = [];
+                        for(let i=1; i<= this.state.level; i++) {
+                            let pY = this.state.prevPositions[this.state.prevPositions.length - i].y;
+                            let pX =this.state.prevPositions[this.state.prevPositions.length - i].x;
+                            snakeBody.push({x: pX, y: pY});
+                        }
+                        console.log(this.state.prevPositions)
+                        if (snakeBody.length > 0) {
+                            if (snakeBody.find(sb => sb.x == this.state.currentPosition.x && sb.y == this.state.currentPosition.y)) {
+                                alert('you lost bro');
+                                this.init(); 
+                            }
+                        }
+                       // 
+                    }
+                } else {
+                    // game loss event
+                    alert('you lost bro');
+                    this.init(); 
+                }
+
+            },
+            init: function () {
+                document.onkeydown = undefined;
+                document.onkeydown = ev => {
+                    if (ev.key.includes("Arrow")) {
+                        this.state.directionPressed = ev.key;
+                    }
+                };
+                this.state = {
+                    level: 1,
+                    prevPositions: [],
+                    currentPosition: {
+                        x: 1,
+                        y: 1
+                    },
+                    nextPosition: {
+                        x: 9,
+                        y: 9
+                    },
+                    directionPressed: 'ArrowRight'
+                };
+
+                
+
+                if (window['gameInterval']) {
+                    clearInterval(window['gameInterval']);
+                }
+
+                window['gameInterval'] = setInterval(() => {
+                    this.nextFrame();
+                    this.render();
+                }, 500);
+
+            }
+        }
+
+        GAME.init();           
+    </script>
+</head>
+
+</html>
