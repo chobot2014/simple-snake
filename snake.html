@@ -43,8 +43,9 @@
         document.write(BASE_TEMPLATE);
         const GAME = {
             configuration: {
-                boardX: 25,
-                boardY: 25
+                boardX: 30,
+                boardY: 25,
+                intervalTime: 250
             },
             state: {
                 level: 1,
@@ -147,7 +148,6 @@
                             let pX =this.state.prevPositions[this.state.prevPositions.length - i].x;
                             snakeBody.push({x: pX, y: pY});
                         }
-                        console.log(this.state.prevPositions)
                         if (snakeBody.length > 0) {
                             if (snakeBody.find(sb => sb.x == this.state.currentPosition.x && sb.y == this.state.currentPosition.y)) {
                                 alert('you lost bro');
@@ -193,7 +193,7 @@
                 window['gameInterval'] = setInterval(() => {
                     this.nextFrame();
                     this.render();
-                }, 500);
+                }, this.configuration.intervalTime);
 
             }
         }
